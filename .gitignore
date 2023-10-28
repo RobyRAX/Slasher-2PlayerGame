@@ -1,0 +1,8 @@
+﻿.vs
+Library
+Assembly-CSharp.csproj
+*.csproj
+*.sln
+Temp
+Logs
+obj
