@@ -5,26 +5,18 @@ using System;
 using TetraCreations.Attributes;
 using RotaryHeart.Lib.SerializableDictionary;
 
-public enum SwipeDirection
-{
-    Up,
-    Down,
-    Right,
-    Left,
-    Diagonal,
-}
-
-public enum HoldDirection
+public enum Direction
 {
     UpDown,
     LeftRight,
-    Diagonal,
+    DiagonalLeft,
+    DiagonalRight,
 }
 
 public class TouchInputManager : MonoBehaviour
 {
     #region
-    public static event Action<Player, SwipeDirection> OnSwipeGesture;
+    public static event Action<Player, Direction> OnSwipeGesture;
     public static event Action<Player, bool> OnHoldGesture;
 
     public static TouchInputManager Instance; 
@@ -257,24 +249,46 @@ public class TouchInputManager : MonoBehaviour
                         player1Swiped = true;
                         //Debug.Log(player1SwipeAngle);
 
-                        if (player1SwipeAngle <= 90 + angleDirectionThreshold && player1SwipeAngle >= 90 - angleDirectionThreshold)
+                        if (player1SwipeAngle <= 90 + angleDirectionThreshold && 
+                            player1SwipeAngle >= 90 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_1, SwipeDirection.Up); // Up
+                            OnSwipeGesture(Player.Player_1, Direction.UpDown); // Up
                         }
-                        else if (player1SwipeAngle <= 180 + angleDirectionThreshold && player1SwipeAngle >= 180 - angleDirectionThreshold)
+                        else if (player1SwipeAngle <= 270 + angleDirectionThreshold &&
+                            player1SwipeAngle >= 270 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_1, SwipeDirection.Left); // Left
+                            OnSwipeGesture(Player.Player_1, Direction.UpDown); // Down
                         }
-                        else if (player1SwipeAngle <= 270 + angleDirectionThreshold && player1SwipeAngle >= 270 - angleDirectionThreshold)
+                        else if (player1SwipeAngle <= 180 + angleDirectionThreshold && 
+                            player1SwipeAngle >= 180 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_1, SwipeDirection.Down); // Down
+                            OnSwipeGesture(Player.Player_1, Direction.LeftRight); // Left
                         }
-                        else if (player1SwipeAngle <= 0 + angleDirectionThreshold || player1SwipeAngle >= 360 - angleDirectionThreshold)
+                        else if (player1SwipeAngle <= 0 + angleDirectionThreshold ||
+                            player1SwipeAngle >= 360 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_1, SwipeDirection.Right); // Right
+                            OnSwipeGesture(Player.Player_1, Direction.LeftRight); // Right
+                        }                        
+                        else if(player1SwipeAngle <= 45 + angleDirectionThreshold && 
+                            player1SwipeAngle >= 45 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_1, Direction.DiagonalRight); //Diagonal - Right
+                        }                           
+                        else if (player1SwipeAngle <= 225 + angleDirectionThreshold && 
+                            player1SwipeAngle >= 225 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_1, Direction.DiagonalRight); //Diagonal - Right
                         }
-                        else
-                            OnSwipeGesture(Player.Player_1, SwipeDirection.Diagonal);
+                        else if (player1SwipeAngle <= 135 + angleDirectionThreshold &&
+                            player1SwipeAngle >= 135 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_1, Direction.DiagonalLeft); //Diagonal - Left
+                        }
+                        else if (player1SwipeAngle <= 315 + angleDirectionThreshold &&
+                            player1SwipeAngle >= 315 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_1, Direction.DiagonalLeft); //Diagonal - Left
+                        }
                     }
                 }
                 else
@@ -294,24 +308,46 @@ public class TouchInputManager : MonoBehaviour
                         player2Swiped = true;
                         //Debug.Log(player1SwipeAngle);
 
-                        if (player2SwipeAngle <= 90 + angleDirectionThreshold && player2SwipeAngle >= 90 - angleDirectionThreshold)
+                        if (player2SwipeAngle <= 90 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 90 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_2, SwipeDirection.Up); // Up
+                            OnSwipeGesture(Player.Player_2, Direction.UpDown); // Up
                         }
-                        else if (player2SwipeAngle <= 180 + angleDirectionThreshold && player2SwipeAngle >= 180 - angleDirectionThreshold)
+                        else if (player2SwipeAngle <= 270 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 270 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_2, SwipeDirection.Left); // Left
+                            OnSwipeGesture(Player.Player_2, Direction.UpDown); // Down
                         }
-                        else if (player2SwipeAngle <= 270 + angleDirectionThreshold && player2SwipeAngle >= 270 - angleDirectionThreshold)
+                        else if (player2SwipeAngle <= 180 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 180 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_2, SwipeDirection.Down); // Down
+                            OnSwipeGesture(Player.Player_2, Direction.LeftRight); // Left
                         }
-                        else if (player2SwipeAngle <= 0 + angleDirectionThreshold || player2SwipeAngle >= 360 - angleDirectionThreshold)
+                        else if (player2SwipeAngle <= 0 + angleDirectionThreshold ||
+                            player2SwipeAngle >= 360 - angleDirectionThreshold)
                         {
-                            OnSwipeGesture(Player.Player_2, SwipeDirection.Right); // Right
+                            OnSwipeGesture(Player.Player_2, Direction.LeftRight); // Right
                         }
-                        else
-                            OnSwipeGesture(Player.Player_2, SwipeDirection.Diagonal);
+                        else if (player2SwipeAngle <= 45 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 45 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_2, Direction.DiagonalRight); //Diagonal - Right
+                        }
+                        else if (player2SwipeAngle <= 225 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 225 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_2, Direction.DiagonalRight); //Diagonal - Right
+                        }
+                        else if (player2SwipeAngle <= 135 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 135 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_2, Direction.DiagonalLeft); //Diagonal - Left
+                        }
+                        else if (player2SwipeAngle <= 315 + angleDirectionThreshold &&
+                            player2SwipeAngle >= 315 - angleDirectionThreshold)
+                        {
+                            OnSwipeGesture(Player.Player_2, Direction.DiagonalLeft); //Diagonal - Left
+                        }
                     }
                 }
             }

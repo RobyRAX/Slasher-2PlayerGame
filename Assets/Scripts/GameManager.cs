@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using TetraCreations.Attributes;
+using DG.Tweening;
 
 public class GameManager : MonoBehaviour
 {
@@ -25,11 +26,16 @@ public class GameManager : MonoBehaviour
 
     public int step;
     [ReadOnly] public int currentStep;
+    public float stepDistance;
+    public float delay;
+
+    public Transform playerParent;
 
     private void Awake()
     {
         Instance = this;
         TouchInputManager.OnSwipeGesture += SwipeHandler;
+        PlayerController.OnAttackReceived += MovePlayerParent;
     }
 
     // Start is called before the first frame update
@@ -44,7 +50,21 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void SwipeHandler(Player player, SwipeDirection dir)
+    void MovePlayerParent(Player attackedPlayer)
+    {
+        if(attackedPlayer == Player.Player_1)
+        {
+            playerParent.DOMoveZ(playerParent.position.z + stepDistance, delay);
+            currentStep++;
+        }
+        else if (attackedPlayer == Player.Player_2)
+        {
+            playerParent.DOMoveZ(playerParent.position.z - stepDistance, delay);
+            currentStep--;
+        }
+    }
+
+    void SwipeHandler(Player player, Direction dir)
     {
         if(player == Player.Player_1)
         {

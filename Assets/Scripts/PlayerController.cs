@@ -13,13 +13,15 @@ public enum Player
 
 public class PlayerController : MonoBehaviour
 {
-    public static event Action<Player, SwipeDirection> OnAttack;
+    public static event Action<Player, Direction> OnAttack;
+    public static event Action<Player> OnAttackReceived;
+    public static event Action<Player> OnAttackBlocked;
 
     public Player player;
     Animator anim;
 
     public bool isDefend;
-    public HoldDirection defendDirection;
+    public Direction defendDirection;
     [Range(0, 22.5f)] public float angleDirectionThreshold;
     public TextMeshProUGUI defendText;
 
@@ -44,14 +46,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void CommenceAttack(Player player, SwipeDirection dir)
+    void CommenceAttack(Player player, Direction attackDir)
     {        
         if(player == this.player && !isDefend)
         {
             anim.SetTrigger("Attack");
-            anim.SetFloat("Direction", Array.IndexOf(Enum.GetValues(typeof(SwipeDirection)), dir));
+            anim.SetFloat("Direction", Array.IndexOf(Enum.GetValues(typeof(Direction)), attackDir));
 
-            OnAttack(player, dir);
+            OnAttack(player, attackDir);
         }
     }
 
@@ -78,26 +80,42 @@ public class PlayerController : MonoBehaviour
             if (TouchInputManager.Instance.line1Angle <= 180 + angleDirectionThreshold &&
                 TouchInputManager.Instance.line1Angle >= 180 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.UpDown;
+                defendDirection = Direction.UpDown;
             }
             else if (TouchInputManager.Instance.line1Angle <= 0 + angleDirectionThreshold ||
                 TouchInputManager.Instance.line1Angle >= 360 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.UpDown;
+                defendDirection = Direction.UpDown;
             }
             else if (TouchInputManager.Instance.line1Angle < 90 + angleDirectionThreshold &&
                 TouchInputManager.Instance.line1Angle > 90 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.LeftRight;
+                defendDirection = Direction.LeftRight;
             }
             else if (TouchInputManager.Instance.line1Angle < 270 + angleDirectionThreshold &&
                 TouchInputManager.Instance.line1Angle > 270 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.LeftRight;
+                defendDirection = Direction.LeftRight;
             }
-            else
+            else if(TouchInputManager.Instance.line1Angle < 45 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line1Angle > 45 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.Diagonal;
+                defendDirection = Direction.DiagonalRight;
+            }
+            else if (TouchInputManager.Instance.line1Angle < 225 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line1Angle > 225 - angleDirectionThreshold)
+            {
+                defendDirection = Direction.DiagonalRight;
+            }
+            else if (TouchInputManager.Instance.line1Angle < 135 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line1Angle > 135 - angleDirectionThreshold)
+            {
+                defendDirection = Direction.DiagonalLeft;
+            }
+            else if (TouchInputManager.Instance.line1Angle < 315 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line1Angle > 315 - angleDirectionThreshold)
+            {
+                defendDirection = Direction.DiagonalLeft;
             }
         }
         else if (player == Player.Player_2)
@@ -105,32 +123,58 @@ public class PlayerController : MonoBehaviour
             if (TouchInputManager.Instance.line2Angle <= 180 + angleDirectionThreshold &&
                 TouchInputManager.Instance.line2Angle >= 180 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.UpDown;
+                defendDirection = Direction.UpDown;
             }
             else if (TouchInputManager.Instance.line2Angle <= 0 + angleDirectionThreshold ||
                 TouchInputManager.Instance.line2Angle >= 360 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.UpDown;
+                defendDirection = Direction.UpDown;
             }
             else if (TouchInputManager.Instance.line2Angle < 90 + angleDirectionThreshold &&
                 TouchInputManager.Instance.line2Angle > 90 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.LeftRight;
+                defendDirection = Direction.LeftRight;
             }
             else if (TouchInputManager.Instance.line2Angle < 270 + angleDirectionThreshold &&
                 TouchInputManager.Instance.line2Angle > 270 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.LeftRight;
+                defendDirection = Direction.LeftRight;
             }
-            else
+            else if (TouchInputManager.Instance.line2Angle < 45 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line2Angle > 45 - angleDirectionThreshold)
             {
-                defendDirection = HoldDirection.Diagonal;
+                defendDirection = Direction.DiagonalRight;
+            }
+            else if (TouchInputManager.Instance.line2Angle < 225 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line2Angle > 225 - angleDirectionThreshold)
+            {
+                defendDirection = Direction.DiagonalRight;
+            }
+            else if (TouchInputManager.Instance.line2Angle < 135 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line2Angle > 135 - angleDirectionThreshold)
+            {
+                defendDirection = Direction.DiagonalLeft;
+            }
+            else if (TouchInputManager.Instance.line2Angle < 315 + angleDirectionThreshold &&
+                TouchInputManager.Instance.line2Angle > 315 - angleDirectionThreshold)
+            {
+                defendDirection = Direction.DiagonalLeft;
             }
         }
     }
 
-    void Attacked(Player player, SwipeDirection dir)
+    void Attacked(Player player, Direction attackDir)
     {
-        
+        if(isDefend)
+        {
+            if(attackDir == defendDirection)
+            {
+                OnAttackBlocked(this.player);
+            }
+        }
+        else
+        {
+            OnAttackReceived(this.player);
+        }
     }
 }
