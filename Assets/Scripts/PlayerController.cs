@@ -20,7 +20,21 @@ public class PlayerController : MonoBehaviour
     public Player player;
     Animator anim;
 
-    public bool isDefend;
+    [ReadOnly] private bool isDefend;
+    public bool IsDefend
+    {
+        get { return isDefend; }
+        set 
+        {
+            if (value == isDefend)
+                return;
+            else
+            {
+                isDefend = value;
+                anim.SetBool("IsDefend", isDefend);
+            }
+        }
+    }
     public Direction defendDirection;
     [Range(0, 22.5f)] public float angleDirectionThreshold;
     public TextMeshProUGUI defendText;
@@ -39,37 +53,35 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        if(isDefend)
+        if(IsDefend)
         {
             UpdateDefend();
             defendText.text = defendDirection.ToString();
         }
     }
 
-    void CommenceAttack(Player player, Direction attackDir)
+    void CommenceAttack(Player attacker, Direction attackDir)
     {        
-        if(player == this.player && !isDefend)
+        if(attacker == this.player && !IsDefend)
         {
             anim.SetTrigger("Attack");
-            anim.SetFloat("Direction", Array.IndexOf(Enum.GetValues(typeof(Direction)), attackDir));
-
-            OnAttack(player, attackDir);
+            anim.SetFloat("Direction", Array.IndexOf(Enum.GetValues(typeof(Direction)), attackDir));            
         }
     }
 
-    void CommenceDefend(Player player, bool isHold)
+    void CommenceDefend(Player defender, bool isHold)
     {
-        if(player == this.player)
+        if(defender == this.player)
         {
-            isDefend = isHold;            
+            IsDefend = isHold;            
         }
         if(this.player == Player.Player_1)
         {
-            GameManager.Instance.textDefend_1.text = isDefend ? "Defend_On" : "Defend_Off";
+            GameManager.Instance.textDefend_1.text = IsDefend ? "Defend_On" : "Defend_Off";
         }
         else if (this.player == Player.Player_2)
         {
-            GameManager.Instance.textDefend_2.text = isDefend ? "Defend_On" : "Defend_Off";
+            GameManager.Instance.textDefend_2.text = IsDefend ? "Defend_On" : "Defend_Off";
         }
     }
 
@@ -163,18 +175,38 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void Attacked(Player player, Direction attackDir)
+    void AttackVertical()
     {
-        if(isDefend)
+        OnAttack(player, Direction.UpDown);
+    }
+    void AttackHorizontal()
+    {
+        OnAttack(player, Direction.LeftRight);
+    }
+    void AttackDiagonalLeft()
+    {
+        OnAttack(player, Direction.DiagonalLeft);
+    }
+    void AttackDiagonalRight()
+    {
+        OnAttack(player, Direction.DiagonalRight);
+    }
+
+    void Attacked(Player victim, Direction attackDir)
+    {
+        if(victim == this.player)
         {
-            if(attackDir == defendDirection)
+            if (IsDefend)
             {
-                OnAttackBlocked(this.player);
+                if (attackDir == defendDirection)
+                {
+                    OnAttackBlocked(this.player);
+                }
             }
-        }
-        else
-        {
-            OnAttackReceived(this.player);
-        }
+            else
+            {
+                OnAttackReceived(this.player);
+            }
+        }        
     }
 }
