@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using TetraCreations.Attributes;
+using RotaryHeart.Lib.SerializableDictionary;
 
 public enum SwipeDirection
 {
@@ -13,11 +14,20 @@ public enum SwipeDirection
     Diagonal,
 }
 
+public enum HoldDirection
+{
+    UpDown,
+    LeftRight,
+    Diagonal,
+}
+
 public class TouchInputManager : MonoBehaviour
 {
     #region
     public static event Action<Player, SwipeDirection> OnSwipeGesture;
     public static event Action<Player, bool> OnHoldGesture;
+
+    public static TouchInputManager Instance; 
     #endregion
 
     private Vector2 player1TouchStartPos;
@@ -27,8 +37,43 @@ public class TouchInputManager : MonoBehaviour
     private float player1SwipeAngle;
     private float player2SwipeAngle;
 
-    private int player1FingerCount = 0;
-    private int player2FingerCount = 0;
+    private Dictionary<int, Touch> player1Touches = new Dictionary<int, Touch>();
+    private Dictionary<int, Touch> player2Touches = new Dictionary<int, Touch>();
+    private Dictionary<int, Touch> activeTouches = new Dictionary<int, Touch>();   
+
+    private int player1TouchCount;
+    public int Player1TouchCount
+    {
+        get { return player1TouchCount; }
+        set
+        {
+            if (value > 2 || value < 0)
+                return;
+            else
+            {
+                player1TouchCount = value;
+                GameManager.Instance.textTouchCount_1.text = player1TouchCount.ToString();
+            }
+        }
+    }
+    private int player2TouchCount;
+    public int Player2TouchCount
+    {
+        get { return player2TouchCount; }
+        set
+        {
+            if (value > 2 || value < 0)
+                return;
+            else
+            {
+                player2TouchCount = value;
+                GameManager.Instance.textTouchCount_2.text = player2TouchCount.ToString();
+            }
+        }
+    }
+
+    private Vector3[] touchPositions = new Vector3[2];
+
     private bool isPlayer1Holding = false;
     public bool IsPlayer1Holding
     {
@@ -39,11 +84,11 @@ public class TouchInputManager : MonoBehaviour
                 return;
             else
             {
-                if (value == true)
-                    OnHoldGesture(Player.Player_1, value);
+                OnHoldGesture(Player.Player_1, value);
 
                 isPlayer1Holding = value;
-                Debug.Log("CHANGED_1");
+                //Debug.Log("CHANGED_1");
+                player1FingerLine.enabled = value;
             }                
         }
     }
@@ -57,11 +102,10 @@ public class TouchInputManager : MonoBehaviour
                 return;
             else
             {
-                if (value == true)
-                    OnHoldGesture(Player.Player_2, value);
+                OnHoldGesture(Player.Player_2, value);
 
                 isPlayer2Holding = value;
-                Debug.Log("CHANGED_2");
+                player2FingerLine.enabled = value;
             }               
         }
     }
@@ -69,13 +113,30 @@ public class TouchInputManager : MonoBehaviour
     public float minSwipeDistance = 50f; // Minimum distance to consider a swipe.
     [Range(0, 22.5f)] public float angleDirectionThreshold;
 
+    public LineRenderer player1FingerLine; // Reference to the line renderer for player 1.
+    public LineRenderer player2FingerLine; // Reference to the line renderer for player 2.
+    Camera mainCamera;
+
+    public float line1Angle;
+    public float line2Angle;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
+    private void Start()
+    {
+        // Ensure the line renderers are initialized properly.
+        player1FingerLine.enabled = false;
+        player2FingerLine.enabled = false;
+
+        mainCamera = Camera.main;
+    }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftControl))
-            player1FingerCount++;
-        if(Input.GetKeyUp(KeyCode.LeftControl))
-            player1FingerCount--;
+        GameManager.Instance.textAllTouchCount.text = Input.touches.Length.ToString();
 
         foreach (Touch touch in Input.touches)
         {
@@ -87,47 +148,80 @@ public class TouchInputManager : MonoBehaviour
 
                 if (isPlayer1Area)
                 {
-                    player1FingerCount++;
+                    player1Touches[touch.fingerId] = touch;
+                    Vector3 linePosition = mainCamera.ScreenToWorldPoint(new Vector3(player1Touches[touch.fingerId].position.x,
+                                                                                player1Touches[touch.fingerId].position.y,
+                                                                                mainCamera.nearClipPlane + 0.2f));
+                    player1FingerLine.SetPosition(touch.fingerId, linePosition);
                 }
                 else if (isPlayer2Area)
                 {
-                    player2FingerCount++;
+                    player2Touches[touch.fingerId] = touch;
+                    Vector3 linePosition = mainCamera.ScreenToWorldPoint(new Vector3(player2Touches[touch.fingerId].position.x,
+                                                                                player2Touches[touch.fingerId].position.y,
+                                                                                mainCamera.nearClipPlane + 0.2f));
+                    player2FingerLine.SetPosition(touch.fingerId, linePosition);
+                }
+            }
+
+            if(touch.phase == TouchPhase.Moved)
+            {
+                if(player1Touches.ContainsKey(touch.fingerId))
+                {
+                    player1Touches[touch.fingerId] = touch;
+                    Vector3 linePosition = mainCamera.ScreenToWorldPoint(new Vector3(player1Touches[touch.fingerId].position.x,
+                                                                                player1Touches[touch.fingerId].position.y,
+                                                                                mainCamera.nearClipPlane + 0.2f));
+                    player1FingerLine.SetPosition(touch.fingerId, linePosition);
+                }
+                if (player2Touches.ContainsKey(touch.fingerId))
+                {
+                    player2Touches[touch.fingerId] = touch;
+                    Vector3 linePosition = mainCamera.ScreenToWorldPoint(new Vector3(player2Touches[touch.fingerId].position.x,
+                                                                                player2Touches[touch.fingerId].position.y,
+                                                                                mainCamera.nearClipPlane + 0.2f));
+                    player2FingerLine.SetPosition(touch.fingerId, linePosition);
                 }
             }
 
             if (touch.phase == TouchPhase.Ended)
             {
-                // Check if the touch was within player 1's or player 2's area.
-                bool isPlayer1Area = touch.position.y < Screen.height / 2;
-                bool isPlayer2Area = !isPlayer1Area;
-
-                if (isPlayer1Area)
+                try
                 {
-                    player1FingerCount--;
+                    player1Touches.Remove(touch.fingerId);
+                    player2Touches.Remove(touch.fingerId);
                 }
-                else if (isPlayer2Area)
+                catch(Exception e)
                 {
-                    player2FingerCount--;
-                }
-            }
-
-            IsPlayer1Holding = player1FingerCount >= 2;
-            IsPlayer2Holding = player2FingerCount >= 2;
-
-            // Check for two-finger holds for each player.
-            if (player1FingerCount >= 2)
-            {
-                // Player 1 is holding with two fingers in their area.
-                Debug.Log("Player 1 is holding with two fingers.");
-            }
-
-            if (player2FingerCount >= 2)
-            {
-                // Player 2 is holding with two fingers in their area.
-                Debug.Log("Player 2 is holding with two fingers.");
-            }
+                    Debug.Log(e);
+                }                                
+            }          
         }
+        Player1TouchCount = player1Touches.Count;
+        Player2TouchCount = player2Touches.Count;
 
+        IsPlayer1Holding = Player1TouchCount >= 2;
+        IsPlayer2Holding = Player2TouchCount >= 2;
+
+        Vector3 line1Direction = player1FingerLine.GetPosition(1) - player1FingerLine.GetPosition(0);
+        line1Angle = Mathf.Atan2(line1Direction.z, line1Direction.x) * Mathf.Rad2Deg;
+        // Ensure the angle is between 0 and 360 degrees
+        if (line1Angle < 0)
+        {
+            line1Angle += 360;
+        }
+        //GameManager.Instance.textLineAngle_1.text = line1Angle.ToString();
+
+        Vector3 line2Direction = player2FingerLine.GetPosition(1) - player2FingerLine.GetPosition(0);
+        line2Angle = Mathf.Atan2(line2Direction.z, line2Direction.x) * Mathf.Rad2Deg;
+        // Ensure the angle is between 0 and 360 degrees
+        if (line2Angle < 0)
+        {
+            line2Angle += 360;
+        }       
+        //GameManager.Instance.textLineAngle_2.text = line2Angle.ToString();
+
+        //SWIPE
         foreach (Touch touch in Input.touches)
         {
             if (touch.phase == TouchPhase.Began)
@@ -161,7 +255,7 @@ public class TouchInputManager : MonoBehaviour
 
                         // Handle the swipe for player 1.
                         player1Swiped = true;
-                        Debug.Log(player1SwipeAngle);
+                        //Debug.Log(player1SwipeAngle);
 
                         if (player1SwipeAngle <= 90 + angleDirectionThreshold && player1SwipeAngle >= 90 - angleDirectionThreshold)
                         {
@@ -198,7 +292,7 @@ public class TouchInputManager : MonoBehaviour
 
                         // Handle the swipe for player 2.
                         player2Swiped = true;
-                        Debug.Log(player1SwipeAngle);
+                        //Debug.Log(player1SwipeAngle);
 
                         if (player2SwipeAngle <= 90 + angleDirectionThreshold && player2SwipeAngle >= 90 - angleDirectionThreshold)
                         {
@@ -237,117 +331,4 @@ public class TouchInputManager : MonoBehaviour
             }
         }
     }
-
-    /*public static TouchInputManager Instance;
-    public static event Action<SwipeDirection, Player> OnSwipe;
-
-    private SwipeGestureRecognizer swipeGesture_Player_1;
-    private SwipeGestureRecognizer swipeGesture_Player_2;
-
-    public bool player1_Swipe;
-    public bool player2_Swipe;
-
-    [SerializeField, Range(0, 22.5f)] float angleDirectionThreshold;
-
-    private void InitTouchInput()
-    {
-        swipeGesture_Player_1 = new SwipeGestureRecognizer();
-        swipeGesture_Player_1.Direction = SwipeGestureRecognizerDirection.Any;
-        swipeGesture_Player_1.StateUpdated += SwipeGestureCallback;
-        swipeGesture_Player_1.DirectionThreshold = 1.0f; // allow a swipe, regardless of slope
-        FingersScript.Instance.AddGesture(swipeGesture_Player_1);
-
-        swipeGesture_Player_2 = new SwipeGestureRecognizer();
-        swipeGesture_Player_2.Direction = SwipeGestureRecognizerDirection.Any;
-        swipeGesture_Player_2.StateUpdated += SwipeGestureCallback;
-        swipeGesture_Player_2.DirectionThreshold = 1.0f; // allow a swipe, regardless of slope
-        FingersScript.Instance.AddGesture(swipeGesture_Player_2);
-    }
-
-    private void Awake()
-    {
-        Instance = this;
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        InitTouchInput();
-    }
-
-    private void SwipeGestureCallback(GestureRecognizer gesture)
-    {
-        if(gesture.State == GestureRecognizerState.Possible)
-        {
-            Vector2 startPoint = new Vector2(gesture.StartFocusX, gesture.StartFocusY);           
-            if(startPoint.y < Screen.height/2 && startPoint.y > 0)
-            {
-                SwipeHandler(gesture, Player.Player_1);
-                player1_Swipe = true;
-            }
-            else if(startPoint.y > Screen.height / 2 && startPoint.y < Screen.height)
-            {
-                SwipeHandler(gesture, Player.Player_2);
-                player2_Swipe = true;
-            }
-        }
-
-        if (gesture.State == GestureRecognizerState.Ended)
-        {
-            Vector2 endPoint = new Vector2(gesture.FocusX, gesture.FocusY);
-            if (endPoint.y < Screen.height / 2 && endPoint.y > 0)
-            {
-                SwipeHandler(gesture, Player.Player_1);
-                player1_Swipe = false;
-            }
-            else if (endPoint.y > Screen.height / 2 && endPoint.y < Screen.height)
-            {
-                SwipeHandler(gesture, Player.Player_2);
-                player2_Swipe = false;
-            }
-        }
-    }
-
-
-    void SwipeHandler(GestureRecognizer gesture, Player player)
-    {
-        if (gesture.State == GestureRecognizerState.Ended)
-        {
-            Vector2 velocityVector = new Vector2(gesture.VelocityX, gesture.VelocityY);
-            float angle = Mathf.Atan2(velocityVector.y, velocityVector.x) * Mathf.Rad2Deg;
-            if (angle < 0)
-            {
-                angle += 360;
-            }
-
-            Debug.Log(angle);
-
-            if (angle <= 90 + angleDirectionThreshold && angle >= 90 - angleDirectionThreshold)
-            {
-                OnSwipe(SwipeDirection.Up, player); // Up
-            }
-            else if (angle <= 180 + angleDirectionThreshold && angle >= 180 - angleDirectionThreshold)
-            {
-                OnSwipe(SwipeDirection.Left, player); // Left
-            }
-            else if (angle <= 270 + angleDirectionThreshold && angle >= 270 - angleDirectionThreshold)
-            {
-                OnSwipe(SwipeDirection.Down, player); // Down
-            }
-            else if (angle <= 0 + angleDirectionThreshold || angle >= 360 - angleDirectionThreshold)
-            {
-                OnSwipe(SwipeDirection.Right, player); // Right
-            }
-            else
-                OnSwipe(SwipeDirection.Diagonal, player);
-
-            Debug.DrawLine(new Vector3(gesture.StartFocusX, gesture.StartFocusY, 0), new Vector3(gesture.FocusX, gesture.FocusY, 0));
-        }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }*/
 }

@@ -7,15 +7,29 @@ using TetraCreations.Attributes;
 
 public class GameManager : MonoBehaviour
 {
-    public TextMeshProUGUI text_1;
-    public TextMeshProUGUI text_2;
+    public static GameManager Instance;
+
+    public TextMeshProUGUI textSwipe_1;
+    public TextMeshProUGUI textSwipe_2;
+
+    public TextMeshProUGUI textTouchCount_1;
+    public TextMeshProUGUI textTouchCount_2;
+
+    public TextMeshProUGUI textLineAngle_1;
+    public TextMeshProUGUI textLineAngle_2;
+
+    public TextMeshProUGUI textDefend_1;
+    public TextMeshProUGUI textDefend_2;
+
+    public TextMeshProUGUI textAllTouchCount;
 
     public int step;
     [ReadOnly] public int currentStep;
 
     private void Awake()
     {
-        //TouchInputManager.OnSwipe += SwipeHandler;
+        Instance = this;
+        TouchInputManager.OnSwipeGesture += SwipeHandler;
     }
 
     // Start is called before the first frame update
@@ -30,8 +44,15 @@ public class GameManager : MonoBehaviour
 
     }
 
-    void SwipeHandler(SwipeDirection dir, Player player)
+    void SwipeHandler(Player player, SwipeDirection dir)
     {
-        
+        if(player == Player.Player_1)
+        {
+            textSwipe_1.text = dir.ToString();
+        }
+        if (player == Player.Player_2)
+        {
+            textSwipe_2.text = dir.ToString();
+        }
     }
 }
